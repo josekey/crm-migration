@@ -1,0 +1,120 @@
+{
+    "engagement": {
+        "active": true,
+        "ownerId": 1,
+        "type": "NOTE",
+        "timestamp": 1409172644778
+    },
+    "associations": {
+        "contactIds": [2],
+        "companyIds": [ ],
+        "dealIds": [ ],
+        "ownerIds": [ ],
+		"ticketIds":[ ]
+    },
+    "attachments": [
+        {
+            "id": 4241968539
+        }
+    ],
+    "metadata": {
+        "body": "note body"
+    }
+}
+
+The optional "attachments" parameter accepts a list of file IDs, corresponding to IDs you get for files from the CMS Files API.
+
+For email engagements, the type needs to be set to "EMAIL", and the metadata needs to have the following format:
+"metadata": {
+    "from": {
+      "email": "email@domain.com",
+      "firstName": "First",
+      "lastName": "Last"
+    },
+    "to": [
+      {
+        "email": "contact name <test@test.com>"
+      }
+    ],
+    "cc": [],
+    "bcc": [],
+    "subject": "This is the subject of the email",
+    "html": "<div>This is the body of the email</div><div><br></div><div>-Me</div>",
+    "text": "This is the body of the email\n\n-Me"
+}
+
+For tasks, the type needs to be "TASK"
+The 'Assigned to' field will be the owner set by the ownerId in the engagement data.
+The metadata format is:
+"metadata": {
+    "body": "This is the body of the task.",
+    "subject": "Task title",
+    "status": "NOT_STARTED",
+    "forObjectType": "CONTACT"
+  }
+The status needs to be NOT_STARTED, COMPLETED, IN_PROGRESS, WAITING, or DEFERRED.
+
+For meetings, the type should be "MEETING", and the metadata is:
+"metadata": {
+    "body": "This is the description.",
+    "startTime": 1456858800000,
+    "endTime": 1456862400000,
+    "title": "Event title",
+    "internalMeetingNotes" : "This is the team note"
+  }
+  
+  
+For calls, the type should be "CALL" and the metadata is:  
+"metadata" : {
+    "toNumber" : "5618769964",
+    "fromNumber" : "(857) 829-5489",
+    "status" : "COMPLETED",
+    "durationMilliseconds" : 38000,
+    "recordingUrl" : "https://api.twilio.com/2010-04-01/Accounts/AC890b8e6fbe0d989bb9158e26046a8dde/Recordings/RE3079ac919116b2d22",
+    "body" : ""
+}
+
+Additionally calls now support HubSpot backed transcription. NOTE We will only transcribe calls associated with an `activity created by` user that has a paid Sales or Service hub seat. We only accept .WAV, .FLAC, and .MP4 formats.
+
+"metadata":{
+	"toNumber": "5735786232 ", 
+	"fromNumber": "6179030296", 
+	"status": "COMPLETED",
+	"durationMilliseconds": 38000,
+	"title" : "Call with Test",  //new attribute (auto-created if not specified)
+	"recordingUrl": "https://audiourl", // We support WAV file/ FLAC. We can take mp4's but the transcription may be worse
+	“source” : “INTEGRATIONS_PLATFORM”, // new attribute, optional
+	“appId” : “123” // new attribute
+}
+
+Returns a 200 response with the JSON of the new engagement on success:
+{
+  "engagement": {
+    "id": 328550660,
+    "portalId": 62515,
+    "active": true,
+    "createdAt": 1494352128974,
+    "lastUpdated": 1494352128974,
+    "ownerId": 1,
+    "type": "NOTE",
+    "timestamp": 1409172644778
+  },
+  "associations": {
+    "contactIds": [
+      2
+    ],
+    "companyIds": [],
+    "dealIds": [],
+    "ownerIds": [],
+    "workflowIds": [],
+    "ticketIds": []
+  },
+  "attachments": [
+    {
+      "id": 4241968539
+    }
+  ],
+  "metadata": {
+    "body": "note body"
+  }
+}
