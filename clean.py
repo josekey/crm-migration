@@ -90,6 +90,10 @@ def samson(data):
                 status = "COMPLETED",
                 forObjectType = "COMPANY"
 
+                tasks_metadata(body, subject, status, forObjectType)
+
+
+
 if __name__ == "__main__":
     main()
 

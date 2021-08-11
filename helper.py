@@ -40,12 +40,12 @@ def call_metadata(toNumber, fromNumber, status, durationMilliseconds, recordingU
     }
 
 ### tasks
-def tasks_metadata():
+def tasks_metadata(body, subject, status, forObjectType):
     return {
-        "body": "This is the body of the task.",
-        "subject": "Task title",
-        "status": "NOT_STARTED",
-        "forObjectType": "CONTACT"
+        "body": body,
+        "subject": subject,
+        "status": status,
+        "forObjectType": forObjectType
     }
 
 
@@ -87,11 +87,19 @@ def ISO_to_UNIX(d):
 
 def load_close():
     #load close data
-    contacts = pd.read_csv('/Users/jose/Documents/program_projects/CRM_clean/Close/Angle Health contacts 2021-08-05 18-30.csv')
-    leads = pd.read_csv('/Users/jose/Documents/program_projects/CRM_clean/Close/Angle Health leads 2021-08-05 18-30.csv')
-    opportunities = pd.read_csv('/Users/jose/Documents/program_projects/CRM_clean/Close/Angle Health opportunities 2021-08-05 18-30.csv')
+    contacts = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health contacts 2021-08-05 18-30.csv')
+    leads = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health leads 2021-08-05 18-30.csv')
+    opportunities = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health opportunities 2021-08-05 18-30.csv')
     
     return contacts, leads, opportunities
+
+def load_HS():
+    #load close data
+    contacts = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/from-HS/hubspot-crm-exports-all-contacts-2021-08-11.xlsx')
+    companies = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/from-HS/hubspot-crm-exports-all-companies-2021-08-08.xlsx')
+    deals = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/from-HS/hubspot-crm-exports-all-deals-2021-08-11.xlsx')
+    
+    return contacts, companies, deals
 
 
 ### save beaufified json with activity for one company
