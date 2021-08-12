@@ -1,10 +1,13 @@
 from datetime import time
+from tqdm import tqdm
 from os import name
 from typing import Text
 from numpy import record
 from helper import  email_metadata, meeting_metadata, call_metadata, tasks_metadata
-from helper import ISO_to_UNIX, get_HS_id, create_engagement, initialize_global_spreadsheets
+from helper import ISO_to_UNIX, get_HS_id, create_engagement, initialize_global_spreadsheets, save_json
 import logging
+import json
+import sys
 
 logging.basicConfig(filename='/Users/jose/Documents/program_projects/crm-migration/errors.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
@@ -13,6 +16,37 @@ logging.basicConfig(filename='/Users/jose/Documents/program_projects/crm-migrati
 
 initialize_global_spreadsheets()
 
+
+def main():
+    # f = open('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health leads 2021-08-09 21-39.json')
+    f = open('/Users/jose/Documents/program_projects/crm-migration/JSON-exports/test-cases.json')
+
+    data = json.load(f)
+
+    print('Data Loaded')
+
+    samson(data)
+
+
+
+
+    # print(type(data))
+
+    # temp = [{'activities':dict(data[0])}]
+
+    # print(type(temp))
+
+    # for row in temp:
+    #     # pull activity data
+    #     print(type(row))
+    #     activities = row['activities']
+
+    #     # loop through activities
+    #     for act in activities:
+
+
+
+
 #### create engagement payloads for each type
 # collecting metadata for Hubspot APi call
 def samson(data):
@@ -20,7 +54,7 @@ def samson(data):
 
     engagements = []
 
-    for row in data:
+    for row in tqdm(data):
         # pull activity data
         activities = row['activities']
 
@@ -38,12 +72,42 @@ def samson(data):
                 cont = get_HS_id(act['contact_id'], 'contact')
                 comp = get_HS_id(act['lead_id'], 'company')
                 d = get_HS_id(act['lead_id'], 'deal')
-               
+
+
+                # envelope contents
                 env = act['envelope']
-                f = {'email':env['from'][0]['email'],
-                        'firstName':env['from'][0]['name'].split()[0],
-                        'lastName':env['from'][0]['name'].split()[-1]}
-                to = f"{env['sender'][0]['name']} <{env['sender'][0]['email']}>"
+
+                # 'from' information
+                try:
+                    first = env['from'][0]['name'].split()[0]
+                except IndexError:
+                    logging.warning(f'EMAIL: first name not available for cont={cont} // comp={comp}')
+                    first = ""
+                try:
+                    last = env['from'][0]['name'].split()[-1]
+                except IndexError:
+                    logging.warning(f'EMAIL: first name not available for cont={cont} // comp={comp}')
+                    last = ""
+                try:
+                    last = env['from'][0]['name'].split()[-1]
+                except IndexError:
+                    logging.warning(f'EMAIL: first name not available for cont={cont} // comp={comp}')
+                    last = ""
+
+                try:
+                    email = env['from'][0]['email']
+                except:
+                    email = ""
+                try:
+                    t = f"{env['to'][0]['name']} <{env['to'][0]['email']}>"
+                except:
+                    t = ""
+
+               
+                f = {'email': email,
+                        'firstName':first,
+                        'lastName':last}
+                to = {'email': t}
                 cc = act['cc']
                 bcc = act['bcc']
                 html = act['body_html']
@@ -63,14 +127,14 @@ def samson(data):
                 for c in act['attendees']:
                     temp =  get_HS_id(c['contact_id'], 'contact')
                     if temp:
-                        cont.append(temp)
+                        cont.append(temp[0])
                 comp = get_HS_id(act['lead_id'], 'company')
                 d = get_HS_id(act['lead_id'], 'deal')
 
-                body = "",
-                startTime = ISO_to_UNIX(act['starts_at']), ### unix time
-                endTime = ISO_to_UNIX(act['ends_at']),
-                title = act['title'],
+                body = ""
+                startTime = ISO_to_UNIX(act['starts_at']) ### unix time
+                endTime = ISO_to_UNIX(act['ends_at'])
+                title = act['title']
                 internalMeetingNotes = act['note']
 
                 metadata = meeting_metadata(body, startTime, endTime, title, internalMeetingNotes)
@@ -133,21 +197,23 @@ def samson(data):
 
                 body = act['task_text']
                 subject = "Imported Task"
-                status = "COMPLETED",
+                status = "COMPLETED"
                 forObjectType = "COMPANY"
 
                 metadata = tasks_metadata(body, subject, status, forObjectType)
 
-                engagements.append(create_engagement(ownerID, type, time, metadata, comp))
+                engagements.append(create_engagement(ownerID, type, time, metadata, companies=comp))
 
 
+    save_json('/Users/jose/Documents/program_projects/crm-migration/JSON-exports/PAYLOAD_TEST.json',engagements)
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
 
 ############ NOTES ############
 
+# why are things populating in a list
 # mappings for users, contact, companies, and deals to HubSpot ID, and Close ID
 # func for owner Id
 

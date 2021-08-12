@@ -6,10 +6,7 @@ import simplejson
 import json
 import logging
 
-###### metadata for payloads
-
-
-
+##### metadata for payload
 
 ### email    
 def email_metadata(f, to, cc, bcc, subject, html, text):
@@ -58,7 +55,7 @@ def tasks_metadata(body, subject, status, forObjectType):
 
 ### creating singular engagement dictionary payload  
 def create_engagement(ownerID, type, time, metadata, contacts=[], companies=[], deals=[]):
-    {
+    return {
         "engagement": {
             "active": 'true', #--
             "ownerId": ownerID, # Map User to ID // if user is no longer with us --> use Jose ID
@@ -100,7 +97,7 @@ def load_HS():
     return contacts, companies, deals
 
 
-### save beaufified json with activity for one company
+####### save beaufified json with activity
 def make_activity_json(company):
     f = open('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health leads 2021-08-09 21-39.json')
     data = json.load(f)
@@ -111,8 +108,12 @@ def make_activity_json(company):
     temp = df.loc[df['name'] == company, 'activities'].to_dict()
 
     # save beautified activities for specific company 
-    savefile = open(f'/Users/jose/Documents/program_projects/crm-migration/{company}.json','w')
-    savefile.write(simplejson.dumps(simplejson.loads(json.dumps(temp)), indent=4, sort_keys=True))
+    save_json(f'/Users/jose/Documents/program_projects/crm-migration/{company}.json',temp)
+    
+
+def save_json(filepath, contents):
+    savefile = open(filepath,'w')
+    savefile.write(simplejson.dumps(simplejson.loads(json.dumps(contents)), indent=4, sort_keys=True))
     savefile.close()
 
 ####### Misc Helpers
@@ -135,16 +136,16 @@ def initialize_global_spreadsheets():
 
     
 
-###
+### returns list with HS ID
 def get_HS_id(name, t): 
     try:
         if t == 'contact':
-            return [contacts.loc[contacts['close_cont_id'] == name, 'HS_cont_id'].values[0]]
+            return [int(contacts.loc[contacts['close_cont_id'] == name, 'HS_cont_id'].values[0])]
         elif t == 'company':
-            return [companies.loc[companies['close_comp_id'] == name, 'HS_comp_id'].values[0]]
+            return [int(companies.loc[companies['close_comp_id'] == name, 'HS_comp_id'].values[0])]
         elif t == 'deal':
                 d = companies.loc[companies['close_comp_id'] == name, 'company_name'].values[0] 
-                return [deals.loc[deals['deal_name'] == d, 'HS_deal_id']]
+                return [int(deals.loc[deals['deal_name'] == d, 'HS_deal_id'])]
         
         ### get owner ID --> default to Jose for non active members --> 2
         elif t == 'owner':
@@ -152,8 +153,8 @@ def get_HS_id(name, t):
                 return rep[name]
             except KeyError:
                 return 2
-    except e:
-        logging.error(f'{t} association not found for {name}')
+    except:
+        logging.warning(f'ASSOCIATION: {t} association not found for {name}')
 
     return []
 
