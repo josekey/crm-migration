@@ -1,21 +1,25 @@
+from datetime import time
 from os import name
 from typing import Text
 from numpy import record
-from helper import ISO_to_UNIX, make_activity_json, email_metadata, meeting_metadata, call_metadata, tasks_metadata
-import pandas as pd
-import json
-import simplejson
+from helper import  email_metadata, meeting_metadata, call_metadata, tasks_metadata
+from helper import ISO_to_UNIX, get_HS_id, create_engagement, initialize_global_spreadsheets
+import logging
+
+logging.basicConfig(filename='/Users/jose/Documents/program_projects/crm-migration/errors.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
 
 # import_api key: api_5yFGuWzW1SmPepijoAc9w4.4ZKsvukTNwCJb5zKJhNh9b
 
-def main():
-    make_activity_json('Rbm Building Services')
+initialize_global_spreadsheets()
 
 #### create engagement payloads for each type
 # collecting metadata for Hubspot APi call
 def samson(data):
     # loop through companies
+
+    engagements = []
+
     for row in data:
         # pull activity data
         activities = row['activities']
@@ -23,13 +27,18 @@ def samson(data):
         # loop through activities
         for act in activities:
             # general activity information 
-            timestamp = ISO_to_UNIX(act['activity_at'])
-            user = act["user_name"]
+            time = ISO_to_UNIX(act['activity_at'])
+            ownerID =  get_HS_id(act["user_name"], 'owner')
 
             # if email
             if act['_type'] == 'Email':
                 type = 'EMAIL'
 
+                # respective HS ids
+                cont = get_HS_id(act['contact_id'], 'contact')
+                comp = get_HS_id(act['lead_id'], 'company')
+                d = get_HS_id(act['lead_id'], 'deal')
+               
                 env = act['envelope']
                 f = {'email':env['from'][0]['email'],
                         'firstName':env['from'][0]['name'].split()[0],
@@ -41,11 +50,22 @@ def samson(data):
                 text = act['body_text']
                 subject = env['subject']
 
-                email_metadata(f, to, cc, bcc, subject, html, text)
+                metadata = email_metadata(f, to, cc, bcc, subject, html, text)
+
+                engagements.append(create_engagement(ownerID, type, time, metadata, cont, comp, d))
             
             # if meeting
             elif act['_type'] == 'Meeting':
                 type = 'MEETING'
+                
+                # respective HS ids
+                cont = []
+                for c in act['attendees']:
+                    temp =  get_HS_id(c['contact_id'], 'contact')
+                    if temp:
+                        cont.append(temp)
+                comp = get_HS_id(act['lead_id'], 'company')
+                d = get_HS_id(act['lead_id'], 'deal')
 
                 body = "",
                 startTime = ISO_to_UNIX(act['starts_at']), ### unix time
@@ -53,17 +73,33 @@ def samson(data):
                 title = act['title'],
                 internalMeetingNotes = act['note']
 
-                meeting_metadata(body, startTime, endTime, title, internalMeetingNotes)
+                metadata = meeting_metadata(body, startTime, endTime, title, internalMeetingNotes)
+
+                engagements.append(create_engagement(ownerID, type, time, metadata, cont, comp, d))
+
 
             # if note
             elif act['_type'] == 'Note':
                 type = 'NOTE'
 
-                {'body':act['note']}
+                # respective HS ids
+                cont = get_HS_id(act['contact_id'], 'contact')
+                comp = get_HS_id(act['lead_id'], 'company')
+                d = get_HS_id(act['lead_id'], 'deal')
+
+                metadata = {'body':act['note']}
+
+                engagements.append(create_engagement(ownerID, type, time, metadata, cont, comp, d))
+
 
             # if call
             elif act['_type'] == 'Call':
                 type = "CALL"
+
+                # respective HS ids
+                cont = get_HS_id(act['contact_id'], 'contact')
+                comp = get_HS_id(act['lead_id'], 'company')
+                d = get_HS_id(act['lead_id'], 'deal')
 
                 # metadata 
                 if act['direction'] == 'outbound':
@@ -72,8 +108,10 @@ def samson(data):
                 else:
                     fromNumber = act['phone']
                     toNumber = act["local_phone"]
+
                 status = "COMPLETED"
                 durationMilliseconds = act['duration']*1000
+
                 if act["has_recording"]:
                     recordingUrl = act['recording_url']
                 else: 
@@ -81,25 +119,37 @@ def samson(data):
 
                 body = act["note"]
 
-                call_metadata(toNumber, fromNumber, status, durationMilliseconds, recordingUrl, body)
+                metadata = call_metadata(toNumber, fromNumber, status, durationMilliseconds, recordingUrl, body)
+
+                engagements.append(create_engagement(ownerID, type, time, metadata, cont, comp, d))
+
 
             # if task
             elif act["_type"] == "TaskCompleted":
+                type = 'TASK'
+
+                comp = get_HS_id(act['lead_id'], 'company')
+
+
                 body = act['task_text']
                 subject = "Imported Task"
                 status = "COMPLETED",
                 forObjectType = "COMPANY"
 
-                tasks_metadata(body, subject, status, forObjectType)
+                metadata = tasks_metadata(body, subject, status, forObjectType)
+
+                engagements.append(create_engagement(ownerID, type, time, metadata, comp))
 
 
 
-if __name__ == "__main__":
-    main()
+
+# if __name__ == "__main__":
+#     main()
 
 ############ NOTES ############
 
-# mappings for users, contact, companies, and deals to HubSpot ID
+# mappings for users, contact, companies, and deals to HubSpot ID, and Close ID
+# func for owner Id
 
 ################# JUNK ############
 
