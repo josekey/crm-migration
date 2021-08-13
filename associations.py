@@ -18,7 +18,7 @@ def main():
     # linked.to_excel('/Users/jose/Documents/program_projects/crm-migration/test.xlsx')
 
 def clean_fields_for_deals():
-    deals = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/stage1_clean/deals.xlsx')
+    deals = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/data/Stage_2_clean/deals_pipe.xlsx')
 
     deals.loc[deals['pipeline'] == 'Sales', 'pipeline'] = 'Sales Pipeline'
     deals.loc[deals['pipeline'] =='Brokers', 'pipeline'] = 'Broker Pipeline'
@@ -35,7 +35,57 @@ def clean_fields_for_deals():
     deals.loc[deals['stage'] =='Quote Proposal SIGNED - WON!', 'stage'] = 'Quote Proposal Signed'
   
 
-    deals.to_excel('/Users/jose/Documents/program_projects/crm-migration/stage1_clean/deals_pipe.xlsx', index=False)
+    deals.to_excel('/Users/jose/Documents/program_projects/crm-migration/data/Stage_3_clean/clean_deals.xlsx', index=False)
+
+def clean_fields_for_companies():
+    comp = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/data/Stage_2_clean/companies.xlsx')
+
+    comp.loc[comp['status'] == 'Potential', 'status'] = 'New'
+    comp.loc[comp['status'] == 'Not Interested', 'status'] = 'Bad Timing'
+    comp.loc[comp['status'] == 'Not Qualified', 'status'] = 'Unqualified'
+    comp.loc[comp['status'] == 'Unsubscribe', 'status'] = 'Bad Timing'
+    comp.loc[comp['status'] == 'Partner', 'status'] = 'Other'
+    comp.loc[comp['status'] == 'Bad Lead', 'status'] = 'Bad Timing'
+    comp.loc[comp['status'] == 'Customer', 'status'] = 'Connected'
+    comp.loc[comp['status'] == 'LinkedIn Campaign', 'status'] = 'Marketing qualified lead'
+    comp.loc[comp['status'] == 'Angle Advocate', 'status'] = 'Evangelist'
+    comp.loc[comp['status'] == 'Cold Call', 'status'] = 'Sales qualified lead'
+    comp.loc[comp['status'] == 'Email Campaign', 'status'] = 'Marketing qualified lead'
+    comp.loc[comp['status'] == 'Event', 'status'] = 'Sales qualified lead'
+
+    comp.loc[comp['is public'] == 'Privately Held', 'is public'] = 'Private'
+    comp.loc[comp['is public'] == 'Public Company', 'is public'] = 'Public'
+
+    comp.to_excel('/Users/jose/Documents/program_projects/crm-migration/data/Stage_3_clean/clean_companies.xlsx')
+
+
+
+def clean_fields_for_contacts():
+    cont = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/data/Stage_2_clean/contacts.xlsx')
+
+    cont['stage'] = 'Lead'
+
+
+    cont.loc[cont['status'] == 'Potential', 'status'] = 'New'
+    cont.loc[cont['status'] == 'Not Interested', 'status'] = 'Bad Timing'
+    cont.loc[cont['status'] == 'Not Qualified', 'status'] = 'Unqualified'
+    cont.loc[cont['status'] == 'Unsubscribe', 'status'] = 'Bad Timing'
+    cont.loc[cont['status'] == 'Partner', 'status'] = 'Other'
+    cont.loc[cont['status'] == 'Partner', 'stage'] = 'Connected'
+    cont.loc[cont['status'] == 'Bad Lead', 'status'] = 'Bad Timing'
+    cont.loc[cont['status'] == 'Customer', 'status'] = 'Connected'
+    cont.loc[cont['status'] == 'Customer', 'stage'] = 'Customer'
+    cont.loc[cont['status'] == 'LinkedIn Campaign', 'status'] = 'Marketing qualified lead'
+    cont.loc[cont['status'] == 'Angle Advocate', 'status'] = 'Evangelist'
+    cont.loc[cont['status'] == 'Angle Advocate', 'stage'] = 'Connected'
+    cont.loc[cont['status'] == 'Cold Call', 'status'] = 'Sales qualified lead'
+    cont.loc[cont['status'] == 'Email Campaign', 'status'] = 'Marketing qualified lead'
+    cont.loc[cont['status'] == 'Event', 'status'] = 'Sales qualified lead'
+
+    cont.to_excel('/Users/jose/Documents/program_projects/crm-migration/data/Stage_3_clean/clean_contacts.xlsx')
+
+
+
 
 def create_id_association_files():
     # company name, lead_id, HS_company_id

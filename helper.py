@@ -5,8 +5,9 @@ import pandas as pd
 import simplejson
 import json
 import logging
+import requests
 
-##### metadata for payload
+########### metadata for payload #########
 
 ### email    
 def email_metadata(f, to, cc, bcc, subject, html, text):
@@ -51,7 +52,7 @@ def tasks_metadata(body, subject, status, forObjectType):
     }
 
 
-####### Make Payload
+########## Make Payload ############
 
 ### creating singular engagement dictionary payload  
 def create_engagement(ownerID, type, time, metadata, contacts=[], companies=[], deals=[]):
@@ -78,26 +79,26 @@ def create_engagement(ownerID, type, time, metadata, contacts=[], companies=[], 
     }
 
 
-####### loading and viewing data
+########### loading and viewing data ############
 
 def load_close():
     #load close data
-    contacts = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health contacts 2021-08-05 18-30.csv')
-    leads = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health leads 2021-08-05 18-30.csv')
-    opportunities = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health opportunities 2021-08-05 18-30.csv')
+    contacts = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/data/Close_Final/Angle Health contacts 2021-08-12 00-37.csv')
+    leads = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/data/Close_Final/Angle Health leads 2021-08-12 00-36.csv')
+    opportunities = pd.read_csv('/Users/jose/Documents/program_projects/crm-migration/data/Close_Final/Angle Health opportunities 2021-08-12 00-37.csv')
     
     return contacts, leads, opportunities
 
 def load_HS():
     #load close data
-    contacts = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/from-HS/hubspot-crm-exports-all-contacts-2021-08-11.xlsx')
-    companies = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/from-HS/hubspot-crm-exports-all-companies-2021-08-08.xlsx')
-    deals = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/from-HS/hubspot-crm-exports-all-deals-2021-08-11.xlsx')
+    contacts = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/data/HubSpot_Final/hubspot-crm-exports-all-contacts-2021-08-12.xlsx')
+    companies = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/data/HubSpot_Final/hubspot-crm-exports-all-companies-2021-08-12.xlsx')
+    deals = pd.read_excel('/Users/jose/Documents/program_projects/crm-migration/data/HubSpot_Final/hubspot-crm-exports-all-deals-2021-08-12.xlsx')
     
     return contacts, companies, deals
 
 
-####### save beaufified json with activity
+############### save beaufified json with activity ############
 def make_activity_json(company):
     f = open('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health leads 2021-08-09 21-39.json')
     data = json.load(f)
@@ -116,7 +117,7 @@ def save_json(filepath, contents):
     savefile.write(simplejson.dumps(simplejson.loads(json.dumps(contents)), indent=4, sort_keys=True))
     savefile.close()
 
-####### Misc Helpers
+############ Misc Helpers ################
 
 def initialize_global_spreadsheets():
     global contacts, companies, deals, rep
@@ -128,13 +129,17 @@ def initialize_global_spreadsheets():
     deals = pd.read_excel(xlsx, 'deals')
 
     # hubspot user IDs
-    rep = {'James Fakult': 1456,
-            'Justin Turner': 485,
-            'Dallas Thompson': 1970,
-            'Jared Steele': 453,
+    rep = {'James Fakult': 95632221,
+            'Justin Turner': 95632231,
+            'Dallas Thompson': 95632220,
+            'Jared Steele': 93445904,
             }
 
-    
+def format_cc_bcc(arg):
+    if arg:
+        return [ {'email': temp} for temp in arg]
+    else: return[]
+
 
 ### returns list with HS ID
 def get_HS_id(name, t): 
@@ -152,7 +157,7 @@ def get_HS_id(name, t):
             try:
                 return rep[name]
             except KeyError:
-                return 2
+                return 93148800
     except:
         logging.warning(f'ASSOCIATION: {t} association not found for {name}')
 
@@ -164,11 +169,53 @@ def ISO_to_UNIX(d):
     dt = parse(d)
     return int(round(dt.replace(tzinfo=timezone.utc).timestamp(),0))
 
-######## test functions 
+
+########### Post Migration #############
+
+## creates json of engagements which fails to pass
+def unpassed_json():
+    ## error data
+    f = open('/Users/jose/Documents/program_projects/crm-migration/api-records-1.log', 'r')
+    lines = f.readlines()
+    f.close()
+
+    ## original payload
+    f = open('/Users/jose/Documents/program_projects/crm-migration/data/PAYLOAD.json')
+    data = json.load(f)
+    f.close()
+
+    ## loop through each line and get index
+    indices = [int(line.split('-')[-1].split()[0]) for line in lines]
+
+    ## find bad engagements using lins of indices
+    engagements = [data[i] for i in indices]
+
+    ## save
+    save_json('/Users/jose/Documents/program_projects/crm-migration/data/failed.json',engagements)
+        
+def get_owner_name(id):
+    querystring = {"hapikey":"97c5dee7-a000-4588-84fd-e3b6f4b44c24"}
+    url = f"http://api.hubapi.com/owners/v2/owners/{id}?hapikey=97c5dee7-a000-4588-84fd-e3b6f4b44c24"
+    response = requests.request('GET',url)
+
+    temp = response.json()
+
+    print(f'{temp["firstName"]} {temp["lastName"]}')
+
+
+
+
+############ test functions #############
 
 def test():
-    initialize_global_spreadsheets()
-    print(get_HS_id('lead_grEGHEd0KbBcO4LjkJasD56iBDMdT6snUvRYm8JmMAb', 'company'))
+    # initialize_global_spreadsheets()
+    # print(get_HS_id('lead_grEGHEd0KbBcO4LjkJasD56iBDMdT6snUvRYm8JmMAb', 'company'))
+
+    # unpassed_json()
+
+    get_owner_name(95632221)
+
+    # print(format_cc_bcc(['jose@anglehealth.com', 'sours@dough.edu']))
 
 if __name__ == "__main__":
     test()

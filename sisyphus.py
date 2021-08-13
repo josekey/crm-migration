@@ -4,10 +4,9 @@ from os import name
 from typing import Text
 from numpy import record
 from helper import  email_metadata, meeting_metadata, call_metadata, tasks_metadata
-from helper import ISO_to_UNIX, get_HS_id, create_engagement, initialize_global_spreadsheets, save_json
+from helper import ISO_to_UNIX, get_HS_id, create_engagement, initialize_global_spreadsheets, save_json, format_cc_bcc
 import logging
 import json
-import sys
 
 logging.basicConfig(filename='/Users/jose/Documents/program_projects/crm-migration/errors.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
@@ -19,31 +18,13 @@ initialize_global_spreadsheets()
 
 def main():
     # f = open('/Users/jose/Documents/program_projects/crm-migration/Close/Angle Health leads 2021-08-09 21-39.json')
-    f = open('/Users/jose/Documents/program_projects/crm-migration/JSON-exports/test-cases.json')
+    f = open('/Users/jose/Documents/program_projects/crm-migration/data/Close_Final/Angle Health leads 2021-08-12 03-38.json')
 
     data = json.load(f)
 
-    print('Data Loaded')
+    print('Data Loaded\n\nRunning...')
 
     samson(data)
-
-
-
-
-    # print(type(data))
-
-    # temp = [{'activities':dict(data[0])}]
-
-    # print(type(temp))
-
-    # for row in temp:
-    #     # pull activity data
-    #     print(type(row))
-    #     activities = row['activities']
-
-    #     # loop through activities
-    #     for act in activities:
-
 
 
 
@@ -80,17 +61,17 @@ def samson(data):
                 # 'from' information
                 try:
                     first = env['from'][0]['name'].split()[0]
-                except IndexError:
+                except:
                     logging.warning(f'EMAIL: first name not available for cont={cont} // comp={comp}')
                     first = ""
                 try:
                     last = env['from'][0]['name'].split()[-1]
-                except IndexError:
+                except:
                     logging.warning(f'EMAIL: first name not available for cont={cont} // comp={comp}')
                     last = ""
                 try:
                     last = env['from'][0]['name'].split()[-1]
-                except IndexError:
+                except:
                     logging.warning(f'EMAIL: first name not available for cont={cont} // comp={comp}')
                     last = ""
 
@@ -108,11 +89,15 @@ def samson(data):
                         'firstName':first,
                         'lastName':last}
                 to = {'email': t}
-                cc = act['cc']
-                bcc = act['bcc']
+                cc = format_cc_bcc(act['cc'])
+                bcc = format_cc_bcc(act['bcc'])
                 html = act['body_html']
                 text = act['body_text']
-                subject = env['subject']
+
+                try:
+                    subject = env['subject']
+                except:
+                    subject = ""
 
                 metadata = email_metadata(f, to, cc, bcc, subject, html, text)
 
@@ -205,7 +190,7 @@ def samson(data):
                 engagements.append(create_engagement(ownerID, type, time, metadata, companies=comp))
 
 
-    save_json('/Users/jose/Documents/program_projects/crm-migration/JSON-exports/PAYLOAD_TEST.json',engagements)
+    save_json('/Users/jose/Documents/program_projects/crm-migration/data/PAYLOAD.json',engagements)
 
 
 if __name__ == "__main__":
