@@ -11,8 +11,6 @@ import json
 logging.basicConfig(filename='/Users/jose/Documents/program_projects/crm-migration/errors.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
 
-# import_api key: api_5yFGuWzW1SmPepijoAc9w4.4ZKsvukTNwCJb5zKJhNh9b
-
 initialize_global_spreadsheets()
 
 
